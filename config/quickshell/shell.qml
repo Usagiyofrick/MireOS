@@ -11,7 +11,7 @@ ShellRoot {
     property string clockText: ""
 
     // -----------------------------
-    // Existing Mire components
+    // Existing Sungan components
     // -----------------------------
 
     Notifications {
@@ -208,13 +208,13 @@ ShellRoot {
             }
 
             // ---------------------
-            // Center: Mire
+            // Center: Sungan
             // ---------------------
 
             Text {
                 anchors.centerIn: parent
 
-                text: "Mire"
+                text: "Sungan"
 
                 color: "#b794f4"
 

@@ -9,11 +9,11 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 if ! grep -q "trixie" /etc/os-release 2>/dev/null; then
-    echo "MireOS installer currently supports Debian 13 (trixie)."
+    echo "Sungan installer currently supports Debian 13 (trixie)."
     exit 1
 fi
 
-MIRE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SUNGAN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "[1/9] Configuring Debian backports..."
 
@@ -42,7 +42,7 @@ sudo apt update
 echo "[4/9] Installing base packages..."
 
 mapfile -t BASE_PACKAGES < \
-    <(grep -vE '^\s*(#|$)' "$MIRE_DIR/packages/base.txt")
+    <(grep -vE '^\s*(#|$)' "$SUNGAN_DIR/packages/base.txt")
 
 sudo apt install -y "${BASE_PACKAGES[@]}"
 
@@ -50,10 +50,10 @@ echo "[5/9] Installing Yazi..."
 
 sudo apt install -y yazi
 
-echo "[6/9] Installing Mire desktop from backports..."
+echo "[6/9] Installing Sungan desktop from backports..."
 
 mapfile -t BACKPORT_PACKAGES < \
-    <(grep -vE '^\s*(#|$)' "$MIRE_DIR/packages/backports.txt")
+    <(grep -vE '^\s*(#|$)' "$SUNGAN_DIR/packages/backports.txt")
 
 sudo apt install -y -t trixie-backports "${BACKPORT_PACKAGES[@]}"
 
@@ -76,7 +76,7 @@ cat > "$HOME/.config/fish/config.fish" <<'FISH'
 set -U fish_greeting
 FISH
 
-echo "[9/9] Installing Mire configs..."
+echo "[9/9] Installing Sungan configs..."
 
 for dir in \
     hypr \
@@ -84,11 +84,11 @@ for dir in \
     foot \
     yazi \
     zathura \
-    mire
+    sungan
 do
-    if [[ -d "$MIRE_DIR/config/$dir" ]]; then
+    if [[ -d "$SUNGAN_DIR/config/$dir" ]]; then
         mkdir -p "$HOME/.config/$dir"
-        cp -a "$MIRE_DIR/config/$dir/." "$HOME/.config/$dir/"
+        cp -a "$SUNGAN_DIR/config/$dir/." "$HOME/.config/$dir/"
     fi
 done
 
@@ -115,7 +115,7 @@ if ! fc-match "JetBrainsMono Nerd Font" | grep -qi "JetBrainsMonoNerd"; then
 fi
 
 echo
-echo "MireOS installation complete."
+echo "Sungan installation complete."
 echo
 echo "Log out and log back in."
 echo "Then start:"

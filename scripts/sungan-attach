@@ -18,6 +18,6 @@ export WAYLAND_DISPLAY="$(
         | head -n1
 )"
 
-echo "Attached to Mire session"
+echo "Attached to Sungan session"
 echo "WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
 echo "HYPRLAND_INSTANCE_SIGNATURE=$HYPRLAND_INSTANCE_SIGNATURE"
