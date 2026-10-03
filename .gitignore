@@ -1,0 +1,9 @@
+*.swp
+*.tmp
+*.log
+
+.cache/
+.local/share/Trash/
+
+config/**/.cache/
+config/**/state/

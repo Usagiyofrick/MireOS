@@ -1,0 +1,5 @@
+hyprland
+quickshell
+hyprlock
+xdg-desktop-portal-hyprland
+xwayland
