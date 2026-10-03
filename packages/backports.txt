@@ -1,5 +1,6 @@
 hyprland
 quickshell
 hyprlock
+hyprland-guiutils
 xdg-desktop-portal-hyprland
 xwayland
