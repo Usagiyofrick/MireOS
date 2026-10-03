@@ -1,0 +1,7 @@
+sddm
+qt6-svg-dev
+qml6-module-qtquick-virtualkeyboard
+qt6-multimedia-dev
+qml6-module-qtquick-controls
+qml6-module-qtquick-effects
+libxcb-cursor0

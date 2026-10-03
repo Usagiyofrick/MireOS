@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
+export HYPRLAND_INSTANCE_SIGNATURE="$(
+    basename "$(find "$XDG_RUNTIME_DIR/hypr" \
+        -mindepth 1 -maxdepth 1 \
+        -type d \
+        | head -n1)"
+)"
+
+export WAYLAND_DISPLAY="$(
+    find "$XDG_RUNTIME_DIR" \
+        -maxdepth 1 \
+        -type s \
+        -name 'wayland-*' \
+        -printf '%f\n' \
+        | head -n1
+)"
+
+echo "Attached to Mire session"
+echo "WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
+echo "HYPRLAND_INSTANCE_SIGNATURE=$HYPRLAND_INSTANCE_SIGNATURE"

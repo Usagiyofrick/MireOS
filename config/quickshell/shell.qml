@@ -1,15 +1,22 @@
 import Quickshell
+import Quickshell.Io
 import Quickshell.Hyprland
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 
 ShellRoot {
-    Colors {
-        id: colors
-    }
+    id: root
 
-    Notifications {}
+    property int activeWorkspace: 1
+    property string clockText: ""
+
+    // -----------------------------
+    // Existing Mire components
+    // -----------------------------
+
+    Notifications {
+        id: notifications
+    }
 
     Osd {
         id: osd
@@ -24,9 +31,12 @@ ShellRoot {
         id: launcher
     }
 
+    // -----------------------------
+    // Global shortcuts
+    // -----------------------------
+
     GlobalShortcut {
         name: "launcher"
-        description: "Open Mire launcher"
         onPressed: launcher.toggle()
     }
 
@@ -55,10 +65,65 @@ ShellRoot {
         onPressed: controls.brightnessDown()
     }
 
-    PanelWindow {
-        id: bar
+    // -----------------------------
+    // Active workspace reader
+    // -----------------------------
 
-        property string currentTime: Qt.formatDateTime(new Date(), "HH:mm")
+    Process {
+        id: workspaceProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const value = parseInt(text.trim())
+
+                if (!isNaN(value))
+                    root.activeWorkspace = value
+            }
+        }
+    }
+
+    Timer {
+        interval: 300
+        running: true
+        repeat: true
+
+        onTriggered: {
+            workspaceProcess.exec([
+                "sh",
+                "-c",
+                "hyprctl activeworkspace -j | jq -r '.id'"
+            ])
+        }
+    }
+
+    // -----------------------------
+    // Clock
+    // -----------------------------
+
+    function updateClock() {
+        const now = new Date()
+
+        root.clockText =
+            String(now.getHours()).padStart(2, "0")
+            + ":"
+            + String(now.getMinutes()).padStart(2, "0")
+    }
+
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+
+        onTriggered: root.updateClock()
+    }
+
+    // -----------------------------
+    // Top panel
+    // -----------------------------
+
+    PanelWindow {
+        id: panel
 
         anchors {
             top: true
@@ -67,89 +132,124 @@ ShellRoot {
         }
 
         implicitHeight: 34
+
         color: "transparent"
-
-        Timer {
-            interval: 1000
-            running: true
-            repeat: true
-
-            onTriggered: {
-                bar.currentTime = Qt.formatDateTime(
-                    new Date(),
-                    "HH:mm"
-                )
-            }
-        }
 
         Rectangle {
             anchors.fill: parent
-            color: colors.background
 
-            RowLayout {
-                anchors.fill: parent
+            color: "#15111c"
 
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
+            // ---------------------
+            // Left: workspaces
+            // ---------------------
 
-                spacing: 14
+            Row {
+                id: workspaceRow
 
-                Row {
-                    spacing: 6
+                anchors {
+                    left: parent.left
+                    leftMargin: 10
+                    verticalCenter: parent.verticalCenter
+                }
 
-                    Repeater {
-                        model: Hyprland.workspaces
+                spacing: 4
 
-                        Rectangle {
-                            required property var modelData
+                Repeater {
+                    model: 9
 
-                            width: 28
-                            height: 24
-                            radius: 6
+                    Rectangle {
+                        required property int index
+
+                        property int workspaceNumber: index + 1
+
+                        width: 24
+                        height: 24
+
+                        radius: 7
+
+                        color:
+                            root.activeWorkspace === workspaceNumber
+                            ? "#9b6cff"
+                            : "transparent"
+
+                        Text {
+                            anchors.centerIn: parent
+
+                            text: parent.workspaceNumber
 
                             color:
-                                modelData.focused
-                                ? colors.primary
-                                : colors.surface2
+                                root.activeWorkspace === parent.workspaceNumber
+                                ? "#15111c"
+                                : "#8e8798"
 
-                            Text {
-                                anchors.centerIn: parent
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 12
+                            font.bold:
+                                root.activeWorkspace === parent.workspaceNumber
+                        }
 
-                                text: modelData.name
-                                color: colors.text
+                        MouseArea {
+                            anchors.fill: parent
 
-                                font.pixelSize: 13
-                            }
+                            cursorShape: Qt.PointingHandCursor
 
-                            MouseArea {
-                                anchors.fill: parent
-
-                                onClicked: {
-                                    modelData.activate()
-                                }
+                            onClicked: {
+                                Quickshell.execDetached([
+                                    "hyprctl",
+                                    "dispatch",
+                                    "workspace",
+                                    String(parent.workspaceNumber)
+                                ])
                             }
                         }
                     }
                 }
+            }
+
+            // ---------------------
+            // Center: Mire
+            // ---------------------
+
+            Text {
+                anchors.centerIn: parent
+
+                text: "Mire"
+
+                color: "#b794f4"
+
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 13
+                font.bold: true
+            }
+
+            // ---------------------
+            // Right: battery + clock
+            // ---------------------
+
+            Row {
+                anchors {
+                    right: parent.right
+                    rightMargin: 12
+                    verticalCenter: parent.verticalCenter
+                }
+
+                spacing: 14
+
+                Battery {
+                    anchors.verticalCenter: parent.verticalCenter
+                }
 
                 Text {
-                    text: "Mire"
+                    anchors.verticalCenter: parent.verticalCenter
 
-                    color: colors.primarySoft
+                    text: root.clockText
 
-                    font.pixelSize: 15
+                    color: "#e8e4ee"
+
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 13
                     font.bold: true
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Text {
-                    text: bar.currentTime
-
-                    color: colors.text
-                    font.pixelSize: 14
                 }
             }
         }

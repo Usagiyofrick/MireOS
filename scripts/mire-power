@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+choice="$(
+    printf '%s\n' \
+        "Lock" \
+        "Suspend" \
+        "Reboot" \
+        "Power off" |
+    wofi \
+        --dmenu \
+        --prompt "Power" \
+        --width 300 \
+        --height 260
+)"
+
+case "$choice" in
+    "Lock")
+        hyprlock
+        ;;
+
+    "Suspend")
+        hyprlock &
+        sleep 0.5
+        systemctl suspend
+        ;;
+
+    "Reboot")
+        systemctl reboot
+        ;;
+
+    "Power off")
+        systemctl poweroff
+        ;;
+esac

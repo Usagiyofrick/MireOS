@@ -1,0 +1,97 @@
+import Quickshell
+import Quickshell.Io
+import QtQuick
+
+Item {
+    id: root
+
+    property int percentage: 0
+    property string state: "unknown"
+
+    implicitWidth: content.implicitWidth
+    implicitHeight: content.implicitHeight
+
+    Process {
+        id: batteryRead
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const output = text
+
+                const p = output.match(/percentage:\s+([0-9]+)%/)
+                if (p)
+                    root.percentage = parseInt(p[1])
+
+                const s = output.match(/state:\s+([^\n]+)/)
+                if (s)
+                    root.state = s[1].trim()
+            }
+        }
+    }
+
+    Timer {
+        interval: 5000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+
+        onTriggered: {
+            batteryRead.exec([
+                "sh",
+                "-c",
+                "upower -i \"$(upower -e | grep BAT | head -n1)\""
+            ])
+        }
+    }
+
+    property bool charging:
+        state === "charging" || state === "fully-charged"
+
+    property color batteryColor: {
+        if (charging)
+            return "#b794f4"
+
+        if (percentage <= 15)
+            return "#d35f5f"
+
+        if (percentage <= 30)
+            return "#d7ba7d"
+
+        return "#e8e4ee"
+    }
+
+    Row {
+        id: content
+        spacing: 6
+
+        Text {
+            text: root.charging ? "󰂄" : root.batteryIcon()
+            color: root.batteryColor
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 15
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Text {
+            text: root.percentage + "%"
+            color: root.batteryColor
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 13
+            anchors.verticalCenter: parent.verticalCenter
+        }
+    }
+
+    function batteryIcon() {
+        if (percentage <= 10) return "󰁺"
+        if (percentage <= 20) return "󰁻"
+        if (percentage <= 30) return "󰁼"
+        if (percentage <= 40) return "󰁽"
+        if (percentage <= 50) return "󰁾"
+        if (percentage <= 60) return "󰁿"
+        if (percentage <= 70) return "󰂀"
+        if (percentage <= 80) return "󰂁"
+        if (percentage <= 90) return "󰂂"
+
+        return "󰁹"
+    }
+}
