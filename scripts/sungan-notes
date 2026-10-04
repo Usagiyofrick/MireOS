@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -e
+
+NOTES_DIR="$HOME/Documents/Notes"
+NOTES_FILE="$NOTES_DIR/quick.md"
+
+mkdir -p "$NOTES_DIR"
+touch "$NOTES_FILE"
+
+if ! hyprctl clients -j | jq -e \
+    '.[] | select(.class == "sungan-notes")' \
+    >/dev/null 2>&1
+then
+    hyprctl dispatch exec \
+        "[workspace special:notes silent] foot --app-id=sungan-notes -e micro $NOTES_FILE"
+
+    sleep 0.4
+fi
+
+hyprctl dispatch togglespecialworkspace notes

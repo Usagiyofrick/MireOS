@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+if ! hyprctl clients -j | jq -e \
+    '.[] | select(.class == "qalculate-gtk")' \
+    >/dev/null 2>&1
+then
+    hyprctl dispatch exec \
+        '[workspace special:calc silent] qalculate-gtk'
+
+    sleep 0.4
+fi
+
+hyprctl dispatch togglespecialworkspace calc

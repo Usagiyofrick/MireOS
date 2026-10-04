@@ -7,22 +7,37 @@ Item {
 
     property int percentage: 0
     property string state: "unknown"
+    property bool available: false
 
-    implicitWidth: content.implicitWidth
-    implicitHeight: content.implicitHeight
+    visible: available
+
+    implicitWidth: available ? content.implicitWidth : 0
+    implicitHeight: available ? content.implicitHeight : 0
 
     Process {
         id: batteryRead
 
         stdout: StdioCollector {
             onStreamFinished: {
-                const output = text
+                const output = text.trim()
+
+                if (output.length === 0) {
+                    root.available = false
+                    return
+                }
 
                 const p = output.match(/percentage:\s+([0-9]+)%/)
-                if (p)
-                    root.percentage = parseInt(p[1])
+
+                if (!p) {
+                    root.available = false
+                    return
+                }
+
+                root.available = true
+                root.percentage = parseInt(p[1])
 
                 const s = output.match(/state:\s+([^\n]+)/)
+
                 if (s)
                     root.state = s[1].trim()
             }
@@ -39,7 +54,8 @@ Item {
             batteryRead.exec([
                 "sh",
                 "-c",
-                "upower -i \"$(upower -e | grep BAT | head -n1)\""
+                "BAT=$(upower -e | grep -m1 BAT || true); " +
+                "[ -n \"$BAT\" ] && upower -i \"$BAT\""
             ])
         }
     }
@@ -91,7 +107,6 @@ Item {
         if (percentage <= 70) return "󰂀"
         if (percentage <= 80) return "󰂁"
         if (percentage <= 90) return "󰂂"
-
         return "󰁹"
     }
 }

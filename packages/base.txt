@@ -43,3 +43,4 @@ wofi
 zathura
 zathura-pdf-poppler
 zip
+qalculate-gtk

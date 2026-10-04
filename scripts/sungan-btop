@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+if ! hyprctl clients -j | jq -e \
+    '.[] | select(.workspace.name == "special:btop")' \
+    >/dev/null 2>&1
+then
+    hyprctl dispatch exec \
+        '[workspace special:btop silent] foot --app-id=sungan-btop -e btop'
+
+    sleep 0.4
+fi
+
+hyprctl dispatch togglespecialworkspace btop
