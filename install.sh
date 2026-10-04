@@ -299,6 +299,25 @@ Current=sddm-astronaut-theme
 SDDM
 fi
 
+
+# ------------------------------------------------------------
+# Lan Mouse
+# ------------------------------------------------------------
+
+log "Installing lan-mouse..."
+
+LAN_MOUSE_BIN="$SUNGAN_DIR/assets/bin/lan-mouse-linux-x86_64"
+
+if [[ -f "$LAN_MOUSE_BIN" ]]; then
+    sudo install -m 755 \
+        "$LAN_MOUSE_BIN" \
+        /usr/local/bin/lan-mouse
+
+    echo "lan-mouse installed."
+else
+    echo "lan-mouse binary not found: $LAN_MOUSE_BIN"
+fi
+
 # ------------------------------------------------------------
 # 15. JetBrainsMono Nerd Font
 # ------------------------------------------------------------
