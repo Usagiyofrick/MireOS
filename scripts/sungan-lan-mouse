@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+if ! hyprctl clients -j | jq -e \
+    '.[] | select(.class == "lan-mouse")' \
+    >/dev/null 2>&1
+then
+    hyprctl dispatch exec \
+        '[workspace special:lan-mouse silent] lan-mouse'
+
+    sleep 0.5
+fi
+
+hyprctl dispatch togglespecialworkspace lan-mouse
