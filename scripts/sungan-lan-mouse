@@ -2,14 +2,18 @@
 
 set -e
 
+CLASS="de.feschber.LanMouse"
+WORKSPACE="lan-mouse"
+
 if ! hyprctl clients -j | jq -e \
-    '.[] | select(.class == "lan-mouse")' \
+    --arg class "$CLASS" \
+    '.[] | select(.class == $class)' \
     >/dev/null 2>&1
 then
     hyprctl dispatch exec \
-        '[workspace special:lan-mouse silent] lan-mouse'
+        "[workspace special:${WORKSPACE} silent] lan-mouse"
 
-    sleep 0.5
+    sleep 0.7
 fi
 
-hyprctl dispatch togglespecialworkspace lan-mouse
+hyprctl dispatch togglespecialworkspace "$WORKSPACE"

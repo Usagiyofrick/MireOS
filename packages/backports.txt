@@ -1,6 +1,7 @@
 hyprland
-quickshell
-hyprlock
 hyprland-guiutils
+hyprlock
+quickshell
+telegram-desktop
 xdg-desktop-portal-hyprland
 xwayland

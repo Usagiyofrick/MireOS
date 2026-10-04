@@ -7,12 +7,12 @@ import QtQuick.Layouts
 ShellRoot {
     id: root
 
-    property int activeWorkspace: 1
     property string clockText: ""
+    property var activeWorkspaces: ({})
 
-    // -----------------------------
-    // Existing Sungan components
-    // -----------------------------
+    // ------------------------------------------------------------
+    // Sungan components
+    // ------------------------------------------------------------
 
     Notifications {
         id: notifications
@@ -31,9 +31,9 @@ ShellRoot {
         id: launcher
     }
 
-    // -----------------------------
+    // ------------------------------------------------------------
     // Global shortcuts
-    // -----------------------------
+    // ------------------------------------------------------------
 
     GlobalShortcut {
         name: "launcher"
@@ -65,40 +65,52 @@ ShellRoot {
         onPressed: controls.brightnessDown()
     }
 
-    // -----------------------------
-    // Active workspace reader
-    // -----------------------------
+    // ------------------------------------------------------------
+    // Active workspace per monitor
+    // ------------------------------------------------------------
 
     Process {
-        id: workspaceProcess
+        id: monitorProcess
 
         stdout: StdioCollector {
             onStreamFinished: {
-                const value = parseInt(text.trim())
+                try {
+                    const monitors = JSON.parse(text)
+                    const result = {}
 
-                if (!isNaN(value))
-                    root.activeWorkspace = value
+                    for (let i = 0; i < monitors.length; i++) {
+                        const monitor = monitors[i]
+
+                        if (monitor.activeWorkspace)
+                            result[monitor.name] = monitor.activeWorkspace.id
+                    }
+
+                    root.activeWorkspaces = result
+                } catch (e) {
+                    console.log("Failed to parse Hyprland monitors:", e)
+                }
             }
         }
     }
 
     Timer {
-        interval: 300
+        interval: 250
         running: true
         repeat: true
+        triggeredOnStart: true
 
         onTriggered: {
-            workspaceProcess.exec([
-                "sh",
-                "-c",
-                "hyprctl activeworkspace -j | jq -r '.id'"
+            monitorProcess.exec([
+                "hyprctl",
+                "monitors",
+                "-j"
             ])
         }
     }
 
-    // -----------------------------
+    // ------------------------------------------------------------
     // Clock
-    // -----------------------------
+    // ------------------------------------------------------------
 
     function updateClock() {
         const now = new Date()
@@ -118,138 +130,163 @@ ShellRoot {
         onTriggered: root.updateClock()
     }
 
-    // -----------------------------
-    // Top panel
-    // -----------------------------
+    // ------------------------------------------------------------
+    // One panel per monitor
+    // ------------------------------------------------------------
 
-    PanelWindow {
-        id: panel
+    Variants {
+        model: Quickshell.screens
 
-        anchors {
-            top: true
-            left: true
-            right: true
-        }
+        delegate: Component {
+            PanelWindow {
+                id: panel
 
-        implicitHeight: 34
+                required property var modelData
 
-        color: "transparent"
+                screen: modelData
 
-        Rectangle {
-            anchors.fill: parent
+                property string screenName: modelData.name
 
-            color: "#15111c"
+                property var workspaceNumbers: {
+                    // Acer KA242Y - odd workspaces
+                    if (screenName === "DVI-D-1")
+                        return [1, 3, 5, 7, 9]
 
-            // ---------------------
-            // Left: workspaces
-            // ---------------------
+                    // Samsung S24D300 - even workspaces
+                    if (screenName === "HDMI-A-1")
+                        return [2, 4, 6, 8]
 
-            Row {
-                id: workspaceRow
-
-                anchors {
-                    left: parent.left
-                    leftMargin: 10
-                    verticalCenter: parent.verticalCenter
+                    // Fallback for unknown monitors
+                    return [1, 2, 3, 4, 5, 6, 7, 8, 9]
                 }
 
-                spacing: 4
+                property int activeWorkspace:
+                    root.activeWorkspaces[screenName] || 0
 
-                Repeater {
-                    model: 9
+                anchors {
+                    top: true
+                    left: true
+                    right: true
+                }
 
-                    Rectangle {
-                        required property int index
+                implicitHeight: 34
+                color: "transparent"
 
-                        property int workspaceNumber: index + 1
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#15111c"
 
-                        width: 24
-                        height: 24
+                    // ------------------------------------------------
+                    // Workspaces
+                    // ------------------------------------------------
 
-                        radius: 7
-
-                        color:
-                            root.activeWorkspace === workspaceNumber
-                            ? "#9b6cff"
-                            : "transparent"
-
-                        Text {
-                            anchors.centerIn: parent
-
-                            text: parent.workspaceNumber
-
-                            color:
-                                root.activeWorkspace === parent.workspaceNumber
-                                ? "#15111c"
-                                : "#8e8798"
-
-                            font.family: "JetBrainsMono Nerd Font"
-                            font.pixelSize: 12
-                            font.bold:
-                                root.activeWorkspace === parent.workspaceNumber
+                    Row {
+                        anchors {
+                            left: parent.left
+                            leftMargin: 10
+                            verticalCenter: parent.verticalCenter
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
+                        spacing: 4
 
-                            cursorShape: Qt.PointingHandCursor
+                        Repeater {
+                            model: panel.workspaceNumbers
 
-                            onClicked: {
-                                Quickshell.execDetached([
-                                    "hyprctl",
-                                    "dispatch",
-                                    "workspace",
-                                    String(parent.workspaceNumber)
-                                ])
+                            Rectangle {
+                                required property int index
+
+                                property int workspaceNumber:
+                                    panel.workspaceNumbers[index]
+
+                                width: 24
+                                height: 24
+                                radius: 7
+
+                                color:
+                                    panel.activeWorkspace === workspaceNumber
+                                    ? "#9b6cff"
+                                    : "transparent"
+
+                                Text {
+                                    anchors.centerIn: parent
+
+                                    text: parent.workspaceNumber
+
+                                    color:
+                                        panel.activeWorkspace === parent.workspaceNumber
+                                        ? "#15111c"
+                                        : "#8e8798"
+
+                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.pixelSize: 12
+
+                                    font.bold:
+                                        panel.activeWorkspace === parent.workspaceNumber
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+
+                                    cursorShape: Qt.PointingHandCursor
+
+                                    onClicked: {
+                                        Quickshell.execDetached([
+                                            "hyprctl",
+                                            "dispatch",
+                                            "workspace",
+                                            String(parent.workspaceNumber)
+                                        ])
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
 
-            // ---------------------
-            // Center: Sungan
-            // ---------------------
+                    // ------------------------------------------------
+                    // Center
+                    // ------------------------------------------------
 
-            Text {
-                anchors.centerIn: parent
+                    Text {
+                        anchors.centerIn: parent
 
-                text: "Sungan"
+                        text: "Sungan"
 
-                color: "#b794f4"
+                        color: "#b794f4"
 
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 13
-                font.bold: true
-            }
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 13
+                        font.bold: true
+                    }
 
-            // ---------------------
-            // Right: battery + clock
-            // ---------------------
+                    // ------------------------------------------------
+                    // Right
+                    // ------------------------------------------------
 
-            Row {
-                anchors {
-                    right: parent.right
-                    rightMargin: 12
-                    verticalCenter: parent.verticalCenter
-                }
+                    Row {
+                        anchors {
+                            right: parent.right
+                            rightMargin: 12
+                            verticalCenter: parent.verticalCenter
+                        }
 
-                spacing: 14
+                        spacing: 14
 
-                Battery {
-                    anchors.verticalCenter: parent.verticalCenter
-                }
+                        Battery {
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
 
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
 
-                    text: root.clockText
+                            text: root.clockText
 
-                    color: "#e8e4ee"
+                            color: "#e8e4ee"
 
-                    font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 13
-                    font.bold: true
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 13
+                            font.bold: true
+                        }
+                    }
                 }
             }
         }
