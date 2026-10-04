@@ -44,3 +44,5 @@ zathura
 zathura-pdf-poppler
 zip
 qalculate-gtk
+libadwaita-1-0
+libgtk-4-1
